@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<link rel="icon" type="image/png" href="../assets/paper_img/favicon.ico">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	
+	<title>Bison FinEd</title>
+
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+    
+    <link href="../bootstrap3/css/bootstrap.css" rel="stylesheet" />
+    <link href="../assets/css/ct-paper.css" rel="stylesheet"/>
+    <link href="../assets/css/demo.css" rel="stylesheet" /> 
+    <link href="../assets/css/examples.css" rel="stylesheet" /> 
+        
+    <!--     Fonts and icons     -->
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+    <!-- jquery for maximum compatibility -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+
+    var quiztitle = "Financial Literacy for Kids";
+
+    /**
+    * Set the information about your questions here. The correct answer string needs to match
+    * the correct choice exactly, as it does string matching. (case sensitive)
+    *
+    */
+    var quiz = [
+        {
+            "question"      :   "Q1: What is debt?",
+            "image"         :   "https://www.debt.org/wp-content/uploads/2012/07/Debt-Collections.jpg",
+            "choices"       :   [
+                                    "something, typically money, that is owed or due.",
+                                    "Something that belongs to you.",
+                                    "Something everyone loves to have",
+                                    "A city in Africa"
+                                ],
+            "correct"       :   "something, typically money, that is owed or due.",
+            "explanation"   :   "If you owe someone money you're in debt and need to get out ASAP.",
+        },
+        {
+            "question"      :   "Q2: What is a Budget?",
+            "image"         :   "https://doughroller-wpengine.netdna-ssl.com/wp-content/uploads/2007/11/Budget-tools-2.jpg",
+            "choices"       :   [
+                                    "A purse.",
+                                    "How much you set aside to spend.",
+                                    "How much you set aside to save",
+                                    "B and C."
+                                ],
+            "correct"       :   "B and C.",
+            "explanation"   :   "A budget is how much you are willing to regulate your monetary use.",
+        },
+        {
+            "question"      :   "Q3: What is a bank?",
+            "image"         :   "https://fitsmallbusiness.com/wp-content/uploads/2018/10/Piggyback-Loan-Mortgages.jpeg",
+            "choices"       :   [
+                                    "A place to keep money",
+                                    "A place to cook food",
+                                    "A doctor's name",
+                                    "A former American president"
+                                ],
+            "correct"       :   "A place to keep money",
+            "explanation"   :   "A bank is just like your piggybank. It is a place where money is kept for the future.",
+        },
+         {
+            "question"      :   "Q4: Is your parents' money unlimited?",
+            "image"         :   "http://atravellersjourney.com/wp-content/uploads/2012/12/Money.jpg",
+            "choices"       :   [
+                                    "LOL, Of course!",
+                                    "No,they have to work for it and save it.",
+                                    "Maybe, it depends.",
+                                    "I don't understand."
+                                ],
+            "correct"       :   "No,they have to work for it and save it.",
+            "explanation"   :   "Money does not grow on trees. It is earned.",
+        },
+         {
+            "question"      :   "Q5: When should you start saving?",
+            "image"         :   "https://fitsmallbusiness.com/wp-content/uploads/2018/10/Piggyback-Loan-Mortgages.jpeg",
+            "choices"       :   [
+                                    "NOW!",
+                                    "Tomorrow",
+                                    "Never",
+                                    "Next Week"
+                                ],
+            "correct"       :   "NOW!",
+            "explanation"   :   "Saving should be started ASAP! ",
+        },
+    ];
+
+
+    /******* No need to edit below this line *********/
+    var currentquestion = 0, score = 0, submt=true, picked;
+
+    jQuery(document).ready(function($){
+
+        /**
+         * HTML Encoding function for alt tags and attributes to prevent messy
+         * data appearing inside tag attributes.
+         */
+        function htmlEncode(value){
+          return $(document.createElement('div')).text(value).html();
+        }
+
+        /**
+         * This will add the individual choices for each question to the ul#choice-block
+         *
+         * @param {choices} array The choices from each question
+         */
+        function addChoices(choices){
+            if(typeof choices !== "undefined" && $.type(choices) == "array"){
+                $('#choice-block').empty();
+                for(var i=0;i<choices.length; i++){
+                    $(document.createElement('li')).addClass('choice choice-box').attr('data-index', i).text(choices[i]).appendTo('#choice-block');                    
+                }
+            }
+        }
+        
+        /**
+         * Resets all of the fields to prepare for next question
+         */
+        function nextQuestion(){
+            submt = true;
+            $('#explanation').empty();
+            $('#question').text(quiz[currentquestion]['question']);
+            $('#pager').text('Question ' + Number(currentquestion + 1) + ' of ' + quiz.length);
+            if(quiz[currentquestion].hasOwnProperty('image') && quiz[currentquestion]['image'] != ""){
+                if($('#question-image').length == 0){
+                    $(document.createElement('img')).addClass('question-image').attr('id', 'question-image').attr('src', quiz[currentquestion]['image']).attr('alt', htmlEncode(quiz[currentquestion]['question'])).insertAfter('#question');
+                } else {
+                    $('#question-image').attr('src', quiz[currentquestion]['image']).attr('alt', htmlEncode(quiz[currentquestion]['question']));
+                }
+            } else {
+                $('#question-image').remove();
+            }
+            addChoices(quiz[currentquestion]['choices']);
+            setupButtons();
+        }
+
+        /**
+         * After a selection is submitted, checks if its the right answer
+         *
+         * @param {choice} number The li zero-based index of the choice picked
+         */
+        function processQuestion(choice){
+            if(quiz[currentquestion]['choices'][choice] == quiz[currentquestion]['correct']){
+                $('.choice').eq(choice).css({'background-color':'#50D943'});
+                $('#explanation').html('<strong>Correct!</strong> ' + htmlEncode(quiz[currentquestion]['explanation']));
+                score++;
+            } else {
+                $('.choice').eq(choice).css({'background-color':'#D92623'});
+                $('#explanation').html('<strong>Incorrect.</strong> ' + htmlEncode(quiz[currentquestion]['explanation']));
+            }
+            currentquestion++;
+            $('#submitbutton').html('NEXT QUESTION &raquo;').on('click', function(){
+                if(currentquestion == quiz.length){
+                    endQuiz();
+                } else {
+                    $(this).text('Check Answer').css({'color':'#222'}).off('click');
+                    nextQuestion();
+                }
+            })
+        }
+
+        /**
+         * Sets up the event listeners for each button.
+         */
+        function setupButtons(){
+            $('.choice').on('mouseover', function(){
+                $(this).css({'background-color':'#e1e1e1'});
+            });
+            $('.choice').on('mouseout', function(){
+                $(this).css({'background-color':'#fff'});
+            })
+            $('.choice').on('click', function(){
+                picked = $(this).attr('data-index');
+                $('.choice').removeAttr('style').off('mouseout mouseover');
+                $(this).css({'border-color':'#222','font-weight':700,'background-color':'#c1c1c1'});
+                if(submt){
+                    submt=false;
+                    $('#submitbutton').css({'color':'#000'}).on('click', function(){
+                        $('.choice').off('click');
+                        $(this).off('click');
+                        processQuestion(picked);
+                    });
+                }
+            })
+        }
+        
+        /**
+         * Quiz ends, display a message.
+         */
+        function endQuiz(){
+            $('#explanation').empty();
+            $('#question').empty();
+            $('#choice-block').empty();
+            $('#submitbutton').remove();
+            $('#question').text("You got " + score + " out of " + quiz.length + " correct.");
+            $(document.createElement('h2')).css({'text-align':'center', 'font-size':'4em'}).text(Math.round(score/quiz.length * 100) + '%').insertAfter('#question');
+        }
+
+        /**
+         * Runs the first time and creates all of the elements for the quiz
+         */
+        function init(){
+            //add title
+            if(typeof quiztitle !== "undefined" && $.type(quiztitle) === "string"){
+                $(document.createElement('h2')).text(quiztitle).appendTo('#frame');
+            } else {
+                $(document.createElement('h1')).text("Quiz").appendTo('#frame');
+            }
+
+            //add pager and questions
+            if(typeof quiz !== "undefined" && $.type(quiz) === "array"){
+                //add pager
+                $(document.createElement('p')).addClass('pager').attr('id','pager').text('Question 1 of ' + quiz.length).appendTo('#frame');
+                //add first question
+                $(document.createElement('h2')).addClass('question').attr('id', 'question').text(quiz[0]['question']).appendTo('#frame');
+                //add image if present
+                if(quiz[0].hasOwnProperty('image') && quiz[0]['image'] != ""){
+                    $(document.createElement('img')).addClass('question-image').attr('id', 'question-image').attr('src', quiz[0]['image']).attr('alt', htmlEncode(quiz[0]['question'])).appendTo('#frame');
+                }
+                $(document.createElement('p')).addClass('explanation').attr('id','explanation').html('&nbsp;').appendTo('#frame');
+            
+                //questions holder
+                $(document.createElement('ul')).attr('id', 'choice-block').appendTo('#frame');
+            
+                //add choices
+                addChoices(quiz[0]['choices']);
+            
+                //add submit button
+                $(document.createElement('div')).addClass('choice-box').attr('id', 'submitbutton').text('Check Answer').css({'font-weight':700,'color':'#222','padding':'30px 0'}).appendTo('#frame');
+            
+                setupButtons();
+            }
+        }
+        
+        init();
+    });
+    </script>
+    <style type="text/css" media="all">
+         
+        
+        #frame{max-width:620px;width:auto;border:1px solid #ccc;background:#fff;padding:10px;margin:3px;}
+        p.pager{margin:5px 0 5px; font:bold 1em/1em "Helvetica Neue", Helvetica, Arial, sans-serif;color:#999;}
+        img.question-image{display:block;max-width:250px;margin:10px auto;border:1px solid #ccc;width:100%;height:auto;}
+        #choice-block{display:block;list-style:none;margin:0;padding:0;}
+        #submitbutton{background:#5a6b8c;}
+        #submitbutton:hover{background:#7b8da6;}
+        #explanation{margin:0 auto;padding:20px;width:75%;}
+        .choice-box{display:block;text-align:center;margin:8px auto;padding:10px 0;border:1px solid #666;cursor:pointer;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px;}
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar navbar-default" role="navigation-demo" id="demo-navbar">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="landing.html">Bison FinEd</a>
+        </div>
+    
+        <!-- Collect the nav links, forms, and other content for toggling-->
+        <div class="collapse navbar-collapse" id="navigation-example-2">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+                <a href="Video2.html" class="btn btn-simple">Videos</a>
+            </li>
+            <li>
+                <a href="QuizFinance.html" class="btn btn-simple">Games</a>
+            </li>
+            <li>
+                <a href="http://www.bisonfinancialapp.ucraft.net" class="btn btn-simple">Courses</a>
+            </li>
+            <li>
+                <a href="#" target="_blank" class="btn btn-simple"><i class="fa fa-twitter"></i></a>
+            </li>
+            <li>
+                <a href="#" target="_blank" class="btn btn-simple"><i class="fa fa-facebook"></i></a>
+            </li>
+           </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-->
+    </nav>         
+        <div class="landing-header" style="background-image: url('../assets/paper_img/smoke.jpg');">
+            <div class="container">
+                <div class="motto">
+                    <h1 class="title-uppercase">Games</h1>
+                    <h3>Scroll to Play!</h3>
+                    <br />
+                    <!--<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="btn"><i class="fa fa-play"></i>Watch video</a>-->
+                </div>
+            </div>    
+        </div>
+        <div class="main">
+            <div class="section text-center landing-section">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-8 col-md-offset-2">
+                           <div id="frame" role="content"></div>
+                            <!--<a href="#" class="btn btn-danger btn-fill">See Details</a>-->
+                        </div>
+                    </div>
+                </div>
+            </div>  
+            
+            
+            </div>
+            
+            <!--<div class="section section-dark text-center landing-section">
+                <div class="container">
+                    <h2>Let's talk about us</h2>
+                    <div class="col-md-4">
+                        <div class="team-player">
+                            <img src="../assets/paper_img/chet_faker_2.jpg" alt="Thumbnail Image" class="img-circle img-responsive">
+                            <h5>Chet Faker <br /><small class="text-muted">Music</small></h5>
+                            <p>You can write here details about one of your team members. You can give more details about what they do. Feel free to add some <a href="#">links</a> for people to be able to follow them outside the site.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="team-player">
+                            <img src="../assets/paper_img/flume.jpg" alt="Thumbnail Image" class="img-circle img-responsive">
+                            <h5>Flume <br /><small class="text-muted">Production</small></h5>
+                            <p>You can write here details about one of your team members. You can give more details about what they do. Feel free to add some <a href="#">links</a> for people to be able to follow them outside the site.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="team-player">
+                            <img src="../assets/paper_img/banks.jpg" alt="Thumbnail Image" class="img-circle img-circle img-responsive">
+                            <h5>Banks <br /><small class="text-muted">Music</small></h5>
+                            <p>You can write here details about one of your team members. You can give more details about what they do. Feel free to add some <a href="#">links</a> for people to be able to follow them outside the site.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>-->
+            
+            
+    <footer class="footer-demo section-dark">
+        <div class="container">
+            
+            <div class="copyright pull-right">
+                &copy; 2019, made with <i class="fa fa-heart heart"></i> Cytla x RayToni
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+<script src="../assets/js/jquery-1.10.2.js" type="text/javascript"></script>
+<script src="../assets/js/jquery-ui-1.10.4.custom.min.js" type="text/javascript"></script>
+
+<script src="../bootstrap3/js/bootstrap.js" type="text/javascript"></script>
+
+<!--  Plugins -->
+<script src="../assets/js/ct-paper-checkbox.js"></script>
+<script src="../assets/js/ct-paper-radio.js"></script>
+<script src="../assets/js/bootstrap-select.js"></script>
+<script src="../assets/js/bootstrap-datepicker.js"></script>
+
+<script src="../assets/js/ct-paper.js"></script>
+    
+</html>
